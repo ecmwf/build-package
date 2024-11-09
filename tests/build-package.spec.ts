@@ -773,7 +773,7 @@ describe("buildPackage", () => {
         );
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["cmake", "--build", "."],
+            ["cmake", "--build", ".", "-v"],
             options
         );
         expect(exec.exec).toHaveBeenCalledWith("env", ["ctest"], options);
@@ -915,7 +915,7 @@ describe("buildPackage", () => {
         );
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["cmake", "--build", "."],
+            ["cmake", "--build", ".", "-v"],
             options
         );
         expect(exec.exec).toHaveBeenCalledWith("env", ["ctest"], options);
@@ -1007,7 +1007,7 @@ describe("buildPackage", () => {
         );
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["cmake", "--build", "."],
+            ["cmake", "--build", ".", "-v"],
             options
         );
         expect(exec.exec).toHaveBeenCalledWith("env", ["ctest"], options);
@@ -1097,7 +1097,7 @@ describe("buildPackage", () => {
         );
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["cmake", "--build", "."],
+            ["cmake", "--build", ".", "-v"],
             options
         );
         expect(exec.exec).not.toHaveBeenCalledWith("env", ["ctest"], options);
@@ -1196,7 +1196,8 @@ describe("buildPackage", () => {
                 command === "env" &&
                 args[0] === "cmake" &&
                 args[1] === "--build" &&
-                args[2] === "."
+                args[2] === "." &&
+                args[3] === "-v"
             ) {
                 return Promise.resolve(1);
             }
