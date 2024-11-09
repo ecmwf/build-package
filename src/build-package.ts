@@ -335,7 +335,7 @@ const buildPackage = async (
         );
         if (isError(exitCode, "Error configuring package")) return false;
 
-        exitCode = await exec.exec("env", ["cmake", "--build", "."], options);
+        exitCode = await exec.exec("env", ["cmake", "--build", ".", "-v"], options);
         if (isError(exitCode, "Error building package")) return false;
 
         exitCode = await exec.exec("env", ["cmake", "--install", "."], options);
