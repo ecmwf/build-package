@@ -1,9 +1,9 @@
 # build-package
 
-[![Changelog](https://img.shields.io/github/package-json/v/ecmwf-actions/build-package)](CHANGELOG.md)
-[![Build Status](https://img.shields.io/github/workflow/status/ecmwf-actions/build-package/ci/main)](https://github.com/ecmwf-actions/build-package/actions/workflows/ci.yml?query=branch:main)
-[![Code Coverage](https://img.shields.io/codecov/c/gh/ecmwf-actions/build-package/main)](https://codecov.io/gh/ecmwf-actions/build-package)
-[![Licence](https://img.shields.io/github/license/ecmwf-actions/build-package)](https://github.com/ecmwf-actions/build-package/blob/main/LICENSE)
+[![Changelog](https://img.shields.io/github/package-json/v/ecmwf/build-package)](CHANGELOG.md)
+[![Build Status](https://img.shields.io/github/workflow/status/ecmwf/build-package/ci/main)](https://github.com/ecmwf/build-package/actions/workflows/ci.yml?query=branch:main)
+[![Code Coverage](https://img.shields.io/codecov/c/gh/ecmwf/build-package/main)](https://codecov.io/gh/ecmwf/build-package)
+[![Licence](https://img.shields.io/github/license/ecmwf/build-package)](https://github.com/ecmwf/build-package/blob/main/LICENSE)
 
 A Github action to build ECMWF software.
 
@@ -33,7 +33,7 @@ steps:
   uses: actions/checkout@v3
 
 - name: Build & Test
-  uses: ecmwf-actions/build-package@v2
+  uses: ecmwf/build-package@v2
   with:
     self_coverage: true
     dependencies: |
@@ -50,7 +50,7 @@ steps:
   uses: actions/checkout@v3
 
 - name: Build & Test
-  uses: ecmwf-actions/build-package@v2
+  uses: ecmwf/build-package@v2
   with:
     cmake: true
     cmake_options: -DCMAKE_BUILD_TYPE=Debug
@@ -68,7 +68,7 @@ steps:
   uses: actions/checkout@v3
 
 - name: Build
-  uses: ecmwf-actions/build-package@v2
+  uses: ecmwf/build-package@v2
   with:
     self_test: false
 ```
@@ -82,7 +82,7 @@ steps:
 
 - name: Install Dependencies
   id: install-dependencies
-  uses: ecmwf-actions/build-package@v2
+  uses: ecmwf/build-package@v2
   with:
     self_build: false
     dependencies: |
@@ -256,7 +256,7 @@ To post-process the code coverage file in a later step, you can refer to it via 
 ```yaml
 - name: Build & Test
   id: build-test
-  uses: ecmwf-actions/build-package@v2
+  uses: ecmwf/build-package@v2
   with:
     self_coverage: true
     dependencies: |
