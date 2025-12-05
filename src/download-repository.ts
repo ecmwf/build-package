@@ -1,27 +1,23 @@
-import fs from "fs";
 import path from "path";
 import * as core from "@actions/core";
-import { mkdirP } from "@actions/io";
-import { Octokit } from "@octokit/core";
-import { filesize } from "filesize";
-import * as tar from "tar";
+import * as io from "@actions/io";
+import * as exec from "@actions/exec";
 
-import downloadFile from "./download-file";
 import { extendDependencies } from "./env-functions";
 import { isError } from "./helper-functions";
 
 import { EnvironmentVariables } from "./types/env-functions";
 
 /**
- * Downloads a Github repository state and extracts it to a directory with supplied name.
+ * Clones a Github repository including all submodules to a directory with supplied name.
  *
  * @param {string} repository Github repository owner and name.
  * @param {string} packageName Name of the package.
  * @param {string} branch Branch (or tag) name. Make sure to supply tags in their verbose form: `refs/tags/tag-name`.
  * @param {string} githubToken Github access token, with `repo` and `actions:read` scopes.
- * @param {string} downloadDir Directory where the repository will be downloaded.
+ * @param {string} downloadDir Directory where the repository will be cloned.
  * @param {EnvironmentVariables} env Local environment object.
- * @returns {Promise<boolean>} Whether the download and extraction was successful.
+ * @returns {Promise<boolean>} Whether the clone operation was successful.
  */
 const downloadRepository = async (
     repository: string,
@@ -37,146 +33,106 @@ const downloadRepository = async (
 
     core.info(`==> Repository: ${owner}/${repo}`);
 
-    let ref;
-    let headSha;
-
-    const octokit = new Octokit({
-        auth: githubToken,
-    });
-
-    if (/^[0-9a-f]{40}$/i.test(branch)) {
-        // We've been given a commit hash instead of a branch or tag.
-        core.info(`==> Hash: ${branch}`);
-        headSha = branch;
-        ref = headSha;
-    } else {
-        if (/^refs\/tags\//.test(branch)) {
-            branch = branch.replace(/^refs\/tags\//, "");
-            ref = `tags/${branch}`;
-        } else {
-            branch = branch.replace(/^refs\/heads\//, "");
-            ref = `heads/${branch}`;
-        }
-
-        core.info(`==> Branch: ${branch}`);
-        core.info(`==> Ref: ${ref}`);
-
-        try {
-            const response = await octokit.request(
-                "GET /repos/{owner}/{repo}/git/ref/{ref}",
-                {
-                    owner,
-                    repo,
-                    ref,
-                },
-            );
-
-            if (
-                isError(
-                    response.status != 200,
-                    `Wrong response code while fetching repository HEAD for ${repo}: ${response.status}`,
-                )
-            )
-                return false;
-
-            headSha = response.data.object.sha;
-        } catch (error) {
-            if (error instanceof Error)
-                isError(
-                    true,
-                    `Error getting repository HEAD for ${repo}: ${error.message}`,
-                );
-            return false;
-        }
-    }
-
-    let url;
-
-    try {
-        const response = await octokit.request(
-            "GET /repos/{owner}/{repo}/tarball/{ref}",
-            {
-                owner,
-                repo,
-                ref,
-            },
-        );
-
-        if (
-            isError(
-                response.status === 302 || response.status !== 200,
-                `Wrong response code while fetching repository download URL for ${repo}: ${response.status}`,
-            )
-        )
-            return false;
-
-        url = response.url;
-    } catch (error) {
-        if (error instanceof Error)
-            isError(
-                true,
-                `Error getting repository download URL for ${repo}: ${error.message}`,
-            );
-        return false;
-    }
-
-    core.info(`==> URL: ${url}`);
-
-    const tarName = `${repo}.tar.gz`;
-
-    try {
-        await downloadFile(url, tarName);
-    } catch (error) {
-        if (error instanceof Error)
-            isError(
-                true,
-                `Error downloading repository archive for ${repo}: ${error.message}`,
-            );
-        return false;
-    }
-
-    const stats = fs.statSync(tarName);
-
-    if (
-        isError(
-            !stats.size,
-            `Error determining size of repository archive for ${repo}`,
-        )
-    )
-        return false;
-
-    const size = filesize(stats.size);
-
-    core.info(`==> Downloaded: ${tarName} (${size})`);
-
-    // Create source directory.
+    const repoUrl = `https://token:${githubToken}@github.com/${owner}/${repo}.git`;
     const sourceDir = path.join(downloadDir, packageName);
-    await mkdirP(sourceDir);
 
-    try {
-        await tar.x({
-            C: sourceDir,
-            file: tarName,
-            strip: 1,
-        });
-    } catch (error) {
-        if (error instanceof Error)
-            isError(
-                true,
-                `Error extracting repository archive for ${repo}: ${error.message}`,
-            );
-        return false;
+    // Ensure the parent directory exists
+    await io.mkdirP(downloadDir);
+
+    let isCommitHash = false;
+    let gitRef = branch;
+    let headSha: string | undefined;
+
+    if (/^[0-9a-f]{40}$/i.test(gitRef)) {
+        // We've been given a commit hash instead of a branch or tag.
+        core.info(`==> Hash: ${gitRef}`);
+        isCommitHash = true;
+        headSha = gitRef;
+    } else {
+        if (/^refs\/tags\//.test(gitRef)) {
+            gitRef = gitRef.replace(/^refs\/tags\//, "");
+            core.info(`==> Tag: ${gitRef}`);
+        } else {
+            gitRef = gitRef.replace(/^refs\/heads\//, "");
+            core.info(`==> Branch: ${gitRef}`);
+        }
     }
 
-    core.info(`==> Extracted ${tarName} to ${sourceDir}`);
+    try {
+        if (isCommitHash) {
+            // For commit hashes, we need to clone the repository first, then checkout the specific commit
+            core.info(
+                `==> Cloning repository to checkout with commit ${gitRef}...`,
+            );
 
-    fs.unlinkSync(tarName);
+            await exec.exec("git", [
+                "clone",
+                "--filter=blob:none",
+                repoUrl,
+                sourceDir,
+            ]);
 
-    await extendDependencies(env, packageName, headSha);
+            core.info(`==> Checking out commit ${gitRef}...`);
+            await exec.exec("git", ["-C", sourceDir, "checkout", gitRef]);
 
-    core.endGroup();
+            core.info(`==> Initializing and updating submodules...`);
+            await exec.exec("git", [
+                "-C",
+                sourceDir,
+                "submodule",
+                "update",
+                "--init",
+                "--recursive",
+            ]);
+        } else {
+            core.info(`==> Cloning repository with branch/tag: ${gitRef}...`);
 
-    return true;
+            await exec.exec("git", [
+                "clone",
+                "--recursive",
+                "--depth",
+                "1",
+                "--branch",
+                gitRef,
+                repoUrl,
+                sourceDir,
+            ]);
+        }
+
+        if (!headSha) {
+            let gitOutput = "";
+            const options = {
+                listeners: {
+                    stdout: (data: Buffer) => {
+                        gitOutput += data.toString();
+                    },
+                },
+                silent: true,
+            };
+
+            await exec.exec(
+                "git",
+                ["-C", sourceDir, "rev-parse", "HEAD"],
+                options,
+            );
+
+            headSha = gitOutput.trim();
+        }
+
+        core.info(`==> Repository cloned successfully to ${sourceDir}`);
+        core.info(`==> Commit SHA: ${headSha}`);
+
+        await extendDependencies(env, packageName, headSha);
+
+        return true;
+    } catch (error) {
+        if (error instanceof Error) {
+            isError(true, `Error cloning repository ${repo}: ${error.message}`);
+        }
+        return false;
+    } finally {
+        core.endGroup();
+    }
 };
 
 export default downloadRepository;
