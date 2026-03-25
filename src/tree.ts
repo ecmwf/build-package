@@ -30,7 +30,7 @@ export const getDependenciesFromTree = (
     if (!dependencies) {
         dependencies = [];
     }
-    if (tree[pkg] == null || !("deps" in tree[pkg])) {
+    if (tree[pkg] == null || !("triggered_by" in tree[pkg])) {
         return dependencies;
     }
     for (const dep of tree[pkg].deps) {
