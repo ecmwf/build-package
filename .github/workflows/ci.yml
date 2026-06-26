@@ -24,7 +24,7 @@ jobs:
     with:
       codecov_upload: true
       notify_teams: true
-      node_version: 20
+      node_version: 24
     secrets:
       incoming_webhook: ${{ secrets.MS_TEAMS_INCOMING_WEBHOOK }}
 
@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
         run: npm ci
