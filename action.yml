@@ -155,5 +155,5 @@ outputs:
   package_path:
     description: Absolute path to generated package.
 runs:
-  using: node16
+  using: node24
   main: dist/index.js

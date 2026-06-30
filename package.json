@@ -3,6 +3,9 @@
   "version": "2.2.0",
   "description": "A Github action to build ECMWF software",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "ncc build src/index.ts --minify --license licenses.txt",
     "stage-build": "git add dist/*",
