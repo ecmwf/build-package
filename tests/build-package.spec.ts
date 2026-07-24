@@ -1116,7 +1116,7 @@ describe("buildPackage", () => {
         expect(isBuilt).toBe(true);
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["ecbuild", `--prefix=${installDir}`, sourceDir],
+            ["ecbuild", `--prefix=${installDir}`, "-DENABLE_TESTS=OFF", "-DENABLE_EXTRA_TESTS=OFF", sourceDir],
             options,
         );
         expect(exec.exec).toHaveBeenCalledWith(
