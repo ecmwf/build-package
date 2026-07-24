@@ -1116,7 +1116,13 @@ describe("buildPackage", () => {
         expect(isBuilt).toBe(true);
         expect(exec.exec).toHaveBeenCalledWith(
             "env",
-            ["ecbuild", `--prefix=${installDir}`, "-DENABLE_TESTS=OFF", "-DENABLE_EXTRA_TESTS=OFF", sourceDir],
+            [
+                "ecbuild",
+                `--prefix=${installDir}`,
+                "-DENABLE_TESTS=OFF",
+                "-DENABLE_EXTRA_TESTS=OFF",
+                sourceDir,
+            ],
             options,
         );
         expect(exec.exec).toHaveBeenCalledWith(
@@ -1180,7 +1186,9 @@ describe("buildPackage", () => {
                 command === "env" &&
                 args[0] === "ecbuild" &&
                 args[1] === `--prefix=${installDir}` &&
-                args[2] === sourceDir
+                args[2] === "-DENABLE_TESTS=OFF" &&
+                args[3] === "-DENABLE_EXTRA_TESTS=OFF" &&
+                args[4] === sourceDir
             ) {
                 return Promise.resolve(1);
             }

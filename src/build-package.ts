@@ -296,7 +296,7 @@ const buildPackage = async (
             configureOptions.push(`-DENABLE_TESTS=OFF`);
             configureOptions.push(`-DENABLE_EXTRA_TESTS=OFF`); // because ecCodes sets this to ON in its CI
         }
-        
+
         core.info(`==> configureOptions: ${configureOptions}`);
 
         let testOptions = [];
