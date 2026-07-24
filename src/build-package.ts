@@ -291,6 +291,12 @@ const buildPackage = async (
             configureOptions.push(...parseOptions(cmakeOptions));
         }
 
+        // if tests disabled, then also disable the building of the tests for efficiency
+        if (!test) {
+            configureOptions.push(`-DENABLE_TESTS=OFF`);
+            configureOptions.push(`-DENABLE_EXTRA_TESTS=OFF`); // because ecCodes sets this to ON in its CI
+        }
+        
         core.info(`==> configureOptions: ${configureOptions}`);
 
         let testOptions = [];
